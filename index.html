@@ -1,1 +1,95 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giriş & Kayıt Sistemi</title>
+  <style>
+    :root {
+      --primary-color: #4f46e5;
+      --primary-hover: #4338ca;
+      --bg-color: #f3f4f6;
+      --card-bg: #ffffff;
+      --text-color: #1f2937;
+      --text-muted: #6b7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { background-color: var(--bg-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px; }
+    .container { background: var(--card-bg); padding: 40px; border-radius: 16px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); width: 100%; max-width: 400px; }
+    h2 { color: var(--text-color); margin-bottom: 8px; text-align: center; }
+    .subtitle { color: var(--text-muted); font-size: 14px; text-align: center; margin-bottom: 24px; }
+    .form-group { margin-bottom: 20px; }
+    label { display: block; font-size: 14px; color: var(--text-color); margin-bottom: 6px; font-weight: 500; }
+    input[type="email"], input[type="text"], input[type="password"] { width: 100%; padding: 12px 16px; border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 15px; outline: none; }
+    input:focus { border-color: var(--primary-color); }
+    .remember-me { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-bottom: 24px; cursor: pointer; }
+    button { width: 100%; padding: 14px; background-color: var(--primary-color); color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; }
+    button:hover { background-color: var(--primary-hover); }
+    .switch-form { text-align: center; margin-top: 24px; font-size: 14px; color: var(--text-muted); }
+    .switch-form a { color: var(--primary-color); text-decoration: none; font-weight: 600; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
 
+  <div class="container">
+    <!-- GİRİŞ FORMU -->
+    <div id="loginFormContainer">
+      <h2>Tekrar Hoş Geldiniz</h2>
+      <p class="subtitle">Lütfen hesabınıza giriş yapın.</p>
+      <form onsubmit="event.preventDefault(); alert('Giriş sistemi henüz veritabanına bağlı değil!');">
+        <div class="form-group">
+          <label>E-posta</label>
+          <input type="email" id="loginEmail" required placeholder="ornek@mail.com">
+        </div>
+        <div class="form-group">
+          <label>Şifre</label>
+          <input type="password" required placeholder="••••••••">
+        </div>
+        <label class="remember-me">
+          <input type="checkbox" id="rememberMe"> Beni Hatırla
+        </label>
+        <button type="submit">Giriş Yap</button>
+      </form>
+      <div class="switch-form">
+        Hesabınız yok mu? <a href="#" onclick="document.getElementById('loginFormContainer').classList.add('hidden'); document.getElementById('registerFormContainer').classList.remove('hidden');">Kayıt Ol</a>
+      </div>
+    </div>
+
+    <!-- KAYIT FORMU -->
+    <div id="registerFormContainer" class="hidden">
+      <h2>Kayıt Olun</h2>
+      <p class="subtitle">Yönetici onayından sonra giriş yapabilirsiniz.</p>
+      <form onsubmit="event.preventDefault(); alert('Kayıt başvurunuz alındı! Yönetici onayı bekliyor.');">
+        <div class="form-group">
+          <label>Ad Soyad</label>
+          <input type="text" required placeholder="Ahmet Yılmaz">
+        </div>
+        <div class="form-group">
+          <label>E-posta</label>
+          <input type="email" required placeholder="ornek@mail.com">
+        </div>
+        <div class="form-group">
+          <label>Şifre</label>
+          <input type="password" required placeholder="••••••••">
+        </div>
+        <button type="submit">Kayıt Başvurusu Yap</button>
+      </form>
+      <div class="switch-form">
+        Zaten hesabınız var mı? <a href="#" onclick="document.getElementById('registerFormContainer').classList.add('hidden'); document.getElementById('loginFormContainer').classList.remove('hidden');">Giriş Yap</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Sayfa açıldığında "Beni Hatırla" kontrolü
+    document.addEventListener("DOMContentLoaded", () => {
+      const savedEmail = localStorage.getItem("rememberedEmail");
+      if (savedEmail) {
+        document.getElementById("loginEmail").value = savedEmail;
+        document.getElementById("rememberMe").checked = true;
+      }
+    });
+  </script>
+</body>
+</html>
