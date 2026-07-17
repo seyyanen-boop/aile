@@ -79,7 +79,6 @@
 </head>
 <body>
 
-  <!-- GİRİŞ / KAYIT EKRANI -->
   <div class="container" id="authContainer">
     <div id="alertBox" class="alert"></div>
     <h2 id="authTitle">Giriş Yap</h2>
@@ -103,10 +102,8 @@
     </p>
   </div>
 
-  <!-- ANA UYGULAMA PANELİ -->
   <div class="app-container hidden" id="appMainPanel">
     
-    <!-- SOHBET -->
     <div class="panel">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
         <h3 id="chatHeaderTitle" style="margin:0;">💬 Genel Sohbet</h3>
@@ -115,7 +112,10 @@
       
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
         <p class="subtitle" id="userWelcomeText" style="margin:0;"></p>
-        <button onclick="logout()" style="width: auto; padding: 3px 8px; font-size: 10px; background-color: #ef4444;">Çıkış</button>
+        <div style="display: flex; gap: 4px;">
+          <button id="notifPermissionBtn" onclick="requestNotificationPermissionUser()" style="width: auto; padding: 3px 6px; font-size: 9px; background-color: #10b981; display: none;">🔔 Bildirimleri Aç</button>
+          <button onclick="logout()" style="width: auto; padding: 3px 8px; font-size: 10px; background-color: #ef4444;">Çıkış</button>
+        </div>
       </div>
 
       <div class="chat-box" id="chatBox"></div>
@@ -125,7 +125,6 @@
       </div>
     </div>
 
-    <!-- LİDERLİK & ADMIN PANELİ -->
     <div class="panel">
       <h3>🏆 Arkadaş Liderliği</h3>
       <p class="subtitle">Herkesin toplam süreleri.</p>
@@ -138,7 +137,6 @@
       <div class="leaderboard-list" id="leaderboardList"></div>
     </div>
 
-    <!-- EKRAN SÜRESİ -->
     <div class="panel">
       <h3>📊 Ekran Süresi</h3>
       <p class="subtitle">Haftalık detaylı dağılımın.</p>
@@ -172,9 +170,27 @@
       navigator.serviceWorker.register('sw.js').catch(err => console.log('SW kayıt hatası:', err));
     }
 
-    function requestNotificationPermission() {
-      if ('Notification' in window && Notification.permission !== 'granted') {
-        Notification.requestPermission();
+    function checkNotificationStatus() {
+      const btn = document.getElementById("notifPermissionBtn");
+      if ('Notification' in window) {
+        if (Notification.permission === 'granted') {
+          if (btn) btn.style.display = "none";
+        } else {
+          if (btn) btn.style.display = "block";
+        }
+      }
+    }
+
+    function requestNotificationPermissionUser() {
+      if ('Notification' in window) {
+        Notification.requestPermission().then(permission => {
+          checkNotificationStatus();
+          if (permission === 'granted') {
+            alert("Bildirimler başarıyla açıldı!");
+          } else {
+            alert("Bildirim izni verilmedi.");
+          }
+        });
       }
     }
 
@@ -195,7 +211,7 @@
     let lastSeenMsgId = 0;
 
     window.addEventListener('DOMContentLoaded', async () => {
-      requestNotificationPermission();
+      checkNotificationStatus();
       if (currentUserName) {
         await checkAdminStatus(currentUserName);
         enterApp(currentUserName);
@@ -266,7 +282,7 @@
         }
 
         if (user.is_approved === false || user.is_approved === null) {
-          showAlert("Hesabınız henüz onaylanmadı. Lütfen yöneticinin onaylamasını bekleyin.", 'error');
+          showAlert("Hesabınız henüz onaylandı. Lütfen yöneticinin onaylamasını bekleyin.", 'error');
           return;
         }
 
@@ -283,6 +299,8 @@
       
       let tagHtml = isAdmin ? ` <span class="admin-tag">ADMIN</span>` : "";
       document.getElementById("userWelcomeText").innerHTML = `Oturum: ${currentUserName}${tagHtml}`;
+
+      checkNotificationStatus();
 
       if (isAdmin) {
         document.getElementById("adminControlPanel").classList.remove("hidden");
