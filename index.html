@@ -45,6 +45,10 @@
     
     .alert { padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; text-align: center; display: none; font-weight: 500; }
     .alert-error { background-color: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
+    .alert-success { background-color: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
+
+    .switch-auth { text-align: center; margin-top: 12px; font-size: 12px; color: var(--text-muted); }
+    .switch-auth span { color: var(--primary); font-weight: 600; cursor: pointer; }
 
     /* Bildirim İzin Banner Tasarımı */
     #notifBanner { background: #e0e7ff; color: #312e81; padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; }
@@ -90,17 +94,32 @@
     <div style="font-size:12px; color:#334155;" id="toastMessage"></div>
   </div>
 
-  <!-- GİRİŞ PANELİ -->
+  <!-- GİRİŞ / KAYIT PANELİ -->
   <div class="container" id="authContainer">
-    <div id="alertBox" class="alert alert-error"></div>
+    <div id="alertBox" class="alert"></div>
+
+    <!-- Giriş Formu -->
     <div id="loginFormContainer">
       <h2>Giriş Yap</h2>
       <p class="subtitle">Sisteme erişmek için bilgilerinizi girin.</p>
-      <form id="loginForm" onsubmit="handleLogin(event)">
+      <form onsubmit="handleAuth(event, 'login')">
         <div class="form-group"><label>E-posta</label><input type="email" id="loginEmail" required placeholder="ornek@mail.com"></div>
         <div class="form-group"><label>Şifre</label><input type="password" id="loginPassword" required placeholder="••••••••"></div>
         <button type="submit">Giriş Yap</button>
       </form>
+      <div class="switch-auth">Hesabın yok mu? <span onclick="toggleAuthMode('signup')">Kayıt Ol</span></div>
+    </div>
+
+    <!-- Kayıt Ol Formu -->
+    <div id="signupFormContainer" class="hidden">
+      <h2>Kayıt Ol</h2>
+      <p class="subtitle">Yeni bir hesap oluşturun.</p>
+      <form onsubmit="handleAuth(event, 'signup')">
+        <div class="form-group"><label>E-posta</label><input type="email" id="signupEmail" required placeholder="ornek@mail.com"></div>
+        <div class="form-group"><label>Şifre</label><input type="password" id="signupPassword" required placeholder="••••••••"></div>
+        <button type="submit">Kayıt Ol</button>
+      </form>
+      <div class="switch-auth">Zaten hesabın var mı? <span onclick="toggleAuthMode('login')">Giriş Yap</span></div>
     </div>
   </div>
 
@@ -184,25 +203,53 @@
       });
     }
 
-    async function handleLogin(e) {
-      e.preventDefault();
-      const email = document.getElementById("loginEmail").value;
-      const password = document.getElementById("loginPassword").value;
+    function toggleAuthMode(mode) {
+      const loginContainer = document.getElementById("loginFormContainer");
+      const signupContainer = document.getElementById("signupFormContainer");
+      const alertBox = document.getElementById("alertBox");
+      alertBox.style.display = "none";
 
-      const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
-      if (error) { alert("Hata: " + error.message); return; }
-
-      currentUserEmail = data.user.email;
-      document.getElementById("authContainer").classList.add("hidden");
-      document.getElementById("appMainPanel").classList.remove("hidden");
-      document.getElementById("userWelcomeText").textContent = `Oturum: ${currentUserEmail.split('@')[0]}`;
-      
-      // Bildirim izni verilmemişse banner göster
-      if (Notification.permission !== "granted") {
-        document.getElementById("notifBanner").classList.remove("hidden");
+      if (mode === 'signup') {
+        loginContainer.classList.add("hidden");
+        signupContainer.classList.remove("hidden");
+      } else {
+        signupContainer.classList.add("hidden");
+        loginContainer.classList.remove("hidden");
       }
+    }
 
-      initApp();
+    function showAlert(message, type = 'error') {
+      const alertBox = document.getElementById("alertBox");
+      alertBox.textContent = message;
+      alertBox.className = `alert alert-${type}`;
+      alertBox.style.display = "block";
+    }
+
+    async function handleAuth(e, type) {
+      e.preventDefault();
+      const email = document.getElementById(type + "Email").value;
+      const password = document.getElementById(type + "Password").value;
+
+      if (type === 'signup') {
+        const { data, error } = await _supabase.auth.signUp({ email, password });
+        if (error) { showAlert("Hata: " + error.message, 'error'); return; }
+        showAlert("Kayıt başarılı! E-postanızı onaylayın veya doğrudan giriş yapın.", 'success');
+        setTimeout(() => toggleAuthMode('login'), 2000);
+      } else {
+        const { data, error } = await _supabase.auth.signInWithPassword({ email, password });
+        if (error) { showAlert("Hata: " + error.message, 'error'); return; }
+
+        currentUserEmail = data.user.email;
+        document.getElementById("authContainer").classList.add("hidden");
+        document.getElementById("appMainPanel").classList.remove("hidden");
+        document.getElementById("userWelcomeText").textContent = `Oturum: ${currentUserEmail.split('@')[0]}`;
+        
+        if (Notification.permission !== "granted") {
+          document.getElementById("notifBanner").classList.remove("hidden");
+        }
+
+        initApp();
+      }
     }
 
     function requestNotificationPermission() {
@@ -253,7 +300,6 @@
           chatBox.appendChild(div);
         }
 
-        // Bildirim Tetikleyicisi
         if (m.recipient === currentUserEmail && m.id > lastCheckedMsgId) {
           lastCheckedMsgId = m.id;
           if (m.email !== activeChatPartner) {
@@ -265,14 +311,12 @@
     }
 
     function triggerSystemNotification(sender, text) {
-      // 1. Uygulama açıkse ekranda WhatsApp tarzı şık baloncuk göster
       const toast = document.getElementById("whatsappToast");
       document.getElementById("toastSender").textContent = sender;
       document.getElementById("toastMessage").textContent = text;
       toast.classList.add("show");
       setTimeout(() => toast.classList.remove("show"), 4000);
 
-      // 2. Telefon kapalı veya arkaplandaysa sistemin bildirim çubuğuna push at
       if (Notification.permission === "granted" && navigator.serviceWorker) {
         navigator.serviceWorker.ready.then(reg => {
           reg.showNotification(`Yeni Mesaj: ${sender}`, {
