@@ -117,7 +117,12 @@
         <h3 id="chatHeaderTitle" style="margin:0;">💬 Genel Sohbet</h3>
         <button id="backToGeneralBtn" class="hidden" onclick="switchChatMode('general')" style="width: auto; padding: 3px 8px; font-size: 10px; background:#64748b;">Genel'e Dön</button>
       </div>
-      <p class="subtitle" id="userWelcomeText"></p>
+      
+      <!-- Karşılama ve Çıkış Yap Butonu -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <p class="subtitle" id="userWelcomeText" style="margin:0;"></p>
+        <button onclick="logout()" style="width: auto; padding: 4px 10px; font-size: 11px; background-color: #ef4444;">Çıkış Yap</button>
+      </div>
       
       <div id="notifBanner" class="hidden">
         <span>Bildirimleri Aç (WhatsApp Gibi Al)</span>
@@ -180,7 +185,6 @@
     let myChart = null;
     let lastCheckedMsgId = 0;
 
-    // Sayfa açıldığında daha önce giriş yapıldıysa doğrudan başlat
     window.addEventListener('DOMContentLoaded', () => {
       if (currentUserName) {
         enterApp(currentUserName);
@@ -206,7 +210,6 @@
       const password = document.getElementById("passwordInput").value.trim();
       if (!name || !password) return;
 
-      // Veritabanından bu isimli kullanıcıyı çekelim
       let { data, error } = await _supabase.from('app_users').select('*').eq('name', name).single();
 
       if (!data) {
@@ -214,7 +217,6 @@
         return;
       }
 
-      // Şifre kontrolü
       if (data.password === password) {
         localStorage.setItem("chat_username", name);
         enterApp(name);
@@ -234,6 +236,11 @@
       }
 
       initApp();
+    }
+
+    function logout() {
+      localStorage.removeItem("chat_username");
+      location.reload();
     }
 
     function requestNotificationPermission() {
@@ -386,7 +393,6 @@
       let toplam = 0, aktifGun = new Set();
 
       if (data) {
-        data.data.forEach?.(l => {}) // Güvenlik önlemi
         data.forEach(l => {
           const t = new Date(l.created_at);
           let idx = t.getDay() - 1; if (idx === -1) idx = 6;
