@@ -4,10 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Akıllı Çalışma ve Sosyal Alan</title>
-  <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#4f46e5">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,7 +12,6 @@
   <style>
     :root {
       --primary: #4f46e5;
-      --primary-hover: #4338ca;
       --bg: #f8fafc;
       --card: #ffffff;
       --text: #0f172a;
@@ -46,9 +42,6 @@
     .alert-error { background-color: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
     .alert-success { background-color: #f0fdf4; color: #166534; border: 1px solid #dcfce7; }
 
-    #notifBanner { background: #e0e7ff; color: #312e81; padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; font-size: 12px; display: flex; justify-content: space-between; align-items: center; font-weight: 600; text-align: left; }
-    #notifBanner button { width: auto; padding: 6px 12px; font-size: 11px; background: var(--primary); }
-
     .chat-box { border: 1px solid #f1f5f9; flex: 1; overflow-y: auto; padding: 10px; border-radius: 10px; margin-bottom: 10px; background: #f8fafc; max-height: 250px; }
     .msg { margin-bottom: 8px; font-size: 13px; background: #f1f5f9; padding: 8px 10px; border-radius: 10px; width: fit-content; max-width: 85%; line-height: 1.3; }
     .msg.me { background: #e0e7ff; color: #1e1b4b; margin-left: auto; }
@@ -71,24 +64,11 @@
     .iphone-average-title { font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; }
     .iphone-average-value { font-size: 20px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
     .chart-container { position: relative; height: 110px; width: 100%; }
-
-    #whatsappToast {
-      position: fixed; top: 15px; right: 15px; left: 15px; background: #ffffff; border-left: 5px solid #25d366;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15); padding: 12px 16px; border-radius: 10px; z-index: 9999;
-      display: flex; flex-direction: column; gap: 4px; transition: transform 0.3s ease, opacity 0.3s ease;
-      transform: translateY(-120%); opacity: 0; text-align: left;
-    }
-    #whatsappToast.show { transform: translateY(0); opacity: 1; }
   </style>
 </head>
 <body>
 
-  <div id="whatsappToast">
-    <div style="font-weight:700; font-size:12px; color:#075e54;">💬 Yeni Mesaj (<span id="toastSender"></span>)</div>
-    <div style="font-size:12px; color:#334155;" id="toastMessage"></div>
-  </div>
-
-  <!-- GİRİŞ / KAYIT VE ONAY EKRANI -->
+  <!-- GİRİŞ / KAYIT EKRANI -->
   <div class="container" id="authContainer">
     <div id="alertBox" class="alert"></div>
     <h2 id="authTitle">Giriş Yap</h2>
@@ -122,15 +102,9 @@
         <button id="backToGeneralBtn" class="hidden" onclick="switchChatMode('general')" style="width: auto; padding: 3px 8px; font-size: 10px; background:#64748b;">Genel'e Dön</button>
       </div>
       
-      <!-- Kullanıcı İsmi ve Çıkış Yap Butonu -->
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
         <p class="subtitle" id="userWelcomeText" style="margin:0;"></p>
         <button onclick="logout()" style="width: auto; padding: 4px 10px; font-size: 11px; background-color: #ef4444;">Çıkış Yap</button>
-      </div>
-      
-      <div id="notifBanner" class="hidden">
-        <span>Bildirimleri Aç (WhatsApp Gibi Al)</span>
-        <button onclick="requestNotificationPermission()">İzin Ver</button>
       </div>
 
       <div class="chat-box" id="chatBox"></div>
@@ -188,19 +162,12 @@
     let timerInterval = null;
     let secondsElapsed = 0;
     let myChart = null;
-    let lastCheckedMsgId = 0;
 
     window.addEventListener('DOMContentLoaded', () => {
       if (currentUserName) {
         enterApp(currentUserName);
       }
     });
-
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch(err => console.log('SW Hata:', err));
-      });
-    }
 
     function showAlert(message, type = 'error') {
       const alertBox = document.getElementById("alertBox");
@@ -213,7 +180,7 @@
       isRegisterMode = !isRegisterMode;
       document.getElementById("alertBox").style.display = "none";
       document.getElementById("authTitle").textContent = isRegisterMode ? "Kayıt Ol" : "Giriş Yap";
-      document.getElementById("authSubtitle").textContent = isRegisterMode ? "Hesap oluştur, onaylandıktan sonra girebilirsin." : "Şifrenle giriş yap.";
+      document.getElementById("authSubtitle").textContent = isRegisterMode ? "Kendine yeni bir hesap oluştur." : "Şifrenle giriş yap.";
       document.getElementById("authBtn").textContent = isRegisterMode ? "Kayıt Ol" : "Giriş Yap";
       document.getElementById("toggleText").textContent = isRegisterMode ? "Zaten hesabın var mı?" : "Hesabın yok mu?";
       document.getElementById("toggleLink").textContent = isRegisterMode ? "Giriş Yap" : "Kayıt Ol";
@@ -226,31 +193,25 @@
       if (!name || !password) return;
 
       if (isRegisterMode) {
-        let { data: existingUser } = await _supabase.from('app_users').select('*').eq('name', name).single();
+        let { data: existingUser } = await _supabase.from('app_users').select('*').eq('name', name).maybeSingle();
         if (existingUser) {
           showAlert("Bu kullanıcı adı zaten alınmış!", 'error');
           return;
         }
 
-        // Yeni kayıt oluşturulurken 'approved' sütunu false (onay bekliyor) olarak eklenir
-        let { error } = await _supabase.from('app_users').insert([{ name: name, password: password, approved: false }]);
+        let { error } = await _supabase.from('app_users').insert([{ name: name, password: password, is_approved: true }]);
         if (error) {
           showAlert("Kayıt oluşturulurken hata oluştu.", 'error');
           return;
         }
 
-        showAlert("Kayıt başarılı! Yönetici onayından sonra giriş yapabilirsin.", 'success');
+        localStorage.setItem("chat_username", name);
+        enterApp(name);
       } else {
-        let { data: user, error } = await _supabase.from('app_users').select('*').eq('name', name).single();
+        let { data: user, error } = await _supabase.from('app_users').select('*').eq('name', name).maybeSingle();
 
         if (!user || user.password !== password) {
           showAlert("Hatalı kullanıcı adı veya şifre!", 'error');
-          return;
-        }
-
-        // Onay kontrolü (Supabase tablosunda 'approved' alanı kontrol edilir)
-        if (user.approved === false) {
-          showAlert("Hesabınız henüz onaylanmadı. Lütfen yöneticinin onaylamasını bekleyin.", 'error');
           return;
         }
 
@@ -264,26 +225,12 @@
       document.getElementById("authContainer").classList.add("hidden");
       document.getElementById("appMainPanel").classList.remove("hidden");
       document.getElementById("userWelcomeText").textContent = `Oturum: ${currentUserName}`;
-      
-      if (Notification.permission !== "granted") {
-        document.getElementById("notifBanner").classList.remove("hidden");
-      }
-
       initApp();
     }
 
     function logout() {
       localStorage.removeItem("chat_username");
       location.reload();
-    }
-
-    function requestNotificationPermission() {
-      Notification.requestPermission().then(permission => {
-        if (permission === "granted") {
-          document.getElementById("notifBanner").classList.add("hidden");
-          new Notification("Bildirimler Aktif!", { body: "Artık mesajlar doğrudan bildirim olarak gelecek." });
-        }
-      });
     }
 
     function initApp() {
@@ -324,33 +271,8 @@
           div.innerHTML = `<span class="msg-sender" onclick="switchChatMode('${m.email}')">${m.email}</span>${m.text}`;
           chatBox.appendChild(div);
         }
-
-        if (m.recipient === currentUserName && m.id > lastCheckedMsgId) {
-          lastCheckedMsgId = m.id;
-          if (m.email !== activeChatPartner) {
-            triggerSystemNotification(m.email, m.text);
-          }
-        }
       });
       if (isAtBottom) chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    function triggerSystemNotification(sender, text) {
-      const toast = document.getElementById("whatsappToast");
-      document.getElementById("toastSender").textContent = sender;
-      document.getElementById("toastMessage").textContent = text;
-      toast.classList.add("show");
-      setTimeout(() => toast.classList.remove("show"), 4000);
-
-      if (Notification.permission === "granted" && navigator.serviceWorker) {
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification(`Yeni Mesaj: ${sender}`, {
-            body: text,
-            icon: 'https://cdn-icons-png.flaticon.com/512/3655/3655556.png',
-            vibrate: [200, 100, 200]
-          });
-        });
-      }
     }
 
     async function sendChat() {
